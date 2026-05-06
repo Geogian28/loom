@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brohome.net | Arista Port Inspector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Catppuccin Macchiato Colors */
+            --base: #24273a;
+            --surface0: #363a4f;
+            --surface1: #494d64;
+            --text: #cad3f5;
+            --subtext0: #a5adcb;
+            --lavender: #b7bdf8;
+            --blue: #8aadf4;
+            --sapphire: #7dc4e4;
+            --green: #a6da95;
+            --yellow: #eed49f;
+            --red: #ed8796;
+            --peach: #f5a97f;
+        }
+
+        body {
+            background-color: var(--base);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Port Styling */
+        .port {
+            width: 30px;
+            height: 30px;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            font-weight: bold;
+            color: #1e2030;
+            border: 1px solid #1e2030;
+            transition: all 0.1s ease-in-out;
+            cursor: pointer;
+        }
+
+        .port:hover {
+            transform: scale(1.3);
+            z-index: 50;
+            outline: 2px solid var(--lavender);
+            box-shadow: 0 0 15px rgba(183, 189, 248, 0.4);
+        }
+
+        .port.active {
+            outline: 2px solid var(--text);
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(202, 211, 245, 0.5);
+            z-index: 40;
+        }
+
+        /* Status Colors */
+        .up {
+            background-color: var(--green);
+        }
+
+        .oper-down {
+            background-color: var(--yellow);
+        }
+
+        .admin-down {
+            background-color: var(--blue);
+        }
+
+        .no-xcvr {
+            background-color: var(--subtext0);
+            color: var(--base);
+        }
+
+        .error {
+            background-color: var(--red);
+        }
+
+        /* Chassis Layout */
+        .port-group {
+            display: grid;
+            grid-template-columns: repeat(8, min-content);
+            grid-template-rows: repeat(2, min-content);
+            gap: 2px;
+        }
+
+        .qsfp {
+            width: 34px;
+            height: 62px;
+        }
+
+        .chassis-flex {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        /* Scrollbar for wide views */
+        ::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--base);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--surface1);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="w-full px-4">
+        <!-- Header -->
+        <header class="mb-6 flex justify-between items-center border-b border-[#494d64] pb-4 max-w-7xl mx-auto">
+            <div>
+                <h1 class="text-2xl font-black text-lavender tracking-tighter uppercase">Arista Port Inspector</h1>
+                <p class="text-xs text-blue-300 font-mono tracking-widest uppercase">brohome.net // sam@mgmt-sw-01</p>
+            </div>
+            <div class="flex gap-4 text-[10px] font-black uppercase tracking-tighter">
+                <div class="flex items-center gap-1.5">
+                    <div class="w-3 h-3 rounded-sm up"></div> Up
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <div class="w-3 h-3 rounded-sm oper-down"></div> Oper Down
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <div class="w-3 h-3 rounded-sm admin-down"></div> Admin Down
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <div class="w-3 h-3 rounded-sm no-xcvr"></div> No Transceiver
+                </div>
+            </div>
+        </header>
+
+        <!-- The Chassis -->
+        <div
+            class="bg-[#181926] p-4 py-10 rounded-xl border-x-[20px] border-[#363a4f] shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-w-[1450px] mx-auto overflow-hidden">
+            <div class="chassis-flex">
+
+                <!-- Block 1: Ports 1-16 -->
+                <div class="port-group">
+                    <div class="port up"
+                        onclick="inspect(this, 'Et1', 'Up', 'proxmox-01.brohome.net', 'enp3s0', '10gig', 'Compute Node 1', '10GBASE-SR', 'Finisar', 'FTLX8571D3BCL', 'AD12345001', '-2.4 dBm', '00:1c:73:a1:b2:01', 'd8:5e:d3:44:55:01')">
+                        1</div>
+                    <div class="port up"
+                        onclick="inspect(this, 'Et3', 'Up', 'truenas.brohome.net', 'ix0', '10gig', 'Main Storage Pool', '10GBASE-CR', 'Generic', 'DAC-SFP-10G-2M', 'SN-DAC-9921', 'N/A (Copper)', '00:1c:73:a1:b2:03', 'ac:1f:6b:12:34:56')">
+                        3</div>
+                    <div class="port no-xcvr"
+                        onclick="inspect(this, 'Et5', 'Empty', '--', '--', 'N/A', 'Unassigned', '--', '--', '--', '--', '--', '00:1c:73:a1:b2:05', '--')">
+                        5</div>
+                    <div class="port no-xcvr"
+                        onclick="inspect(this, 'Et7', 'Empty', '--', '--', 'N/A', 'Unassigned', '--', '--', '--', '--', '--', '00:1c:73:a1:b2:07', '--')">
+                        7</div>
+                    <div class="port up"
+                        onclick="inspect(this, 'Et9', 'Up', 'unifi-ap-garage', 'eth0', '1gig', 'Garage AP', '1000BASE-T', 'FS.com', 'SFP-GE-T', 'FS20230551', 'N/A (Copper)', '00:1c:73:a1:b2:09', 'fc:ec:da:09:11:22')">
+                        9</div>
+                    <script>for (let i = 11; i <= 15; i += 2) document.write(`<div class="port no-xcvr" onclick="inspect(this, 'Et${i}', 'Empty', '--', '--', 'N/A', 'Unassigned', '--', '--', '--', '--', '--', '00:1c:73:a1:b2:${i.toString(16)}', '--')">${i}</div>`)</script>
+
+                    <div class="port up"
+                        onclick="inspect(this, 'Et2', 'Up', 'sam-workstation', 'eth1', '10gig', 'Office Rig', '10GBASE-SR', 'Intel', 'E10GSFPSR', 'IN77281', '-3.1 dBm', '00:1c:73:a1:b2:02', 'b4:2e:99:aa:bb:cc')">
+                        2</div>
+                    <div class="port up"
+                        onclick="inspect(this, 'Et4', 'Up', 'backup-nas', 'eth0', '1gig', 'Offsite Sync', '1000BASE-SX', 'Arista', 'SFP-1G-SX', 'AR99821', '-5.2 dBm', '00:1c:73:a1:b2:04', '00:11:32:ee:ff:11')">
+                        4</div>
+                    <script>for (let i = 6; i <= 16; i += 2) document.write(`<div class="port no-xcvr" onclick="inspect(this, 'Et${i}', 'Empty', '--', '--', 'N/A', 'Unassigned', '--', '--', '--', '--', '--', '00:1c:73:a1:b2:${i.toString(16).padStart(2, '0')}', '--')">${i}</div>`)</script>
+                </div>
+
+                <div class="h-14 w-px bg-[#494d64] opacity-50 mx-1"></div>
+
+                <!-- Block 2: Ports 17-32 -->
+                <div class="port-group">
+                    <script>
+                        for (let i = 17; i <= 31; i += 2) document.write(`<div class="port no-xcvr" onclick="inspect(this, 'Et${i}', 'Empty', '--', '--', 'N/A', 'Unassigned', '--', '--', '--', '--', '--', '00:1c:73:a1:b2:${i.toString(16)}', '--')">${i}</div>`);
+                        for (let i = 18; i <= 32; i += 2) document.write(`<div class="port no-xcvr" onclick="inspect(this, 'Et${i}', 'Empty', '--', '--', 'N/A', 'Unassigned', '--', '--', '--', '--', '--', '00:1c:73:a1:b2:${i.toString(16)}', '--')">${i}</div>`);
+                    </script>
+                </div>
+
+                <div class="h-14 w-px bg-[#494d64] opacity-50 mx-1"></div>
+
+                <!-- Block 3: Ports 33-48 -->
+                <div class="port-group">
+                    <script>
+                        for (let i = 33; i <= 47; i += 2) {
+                            let state = i === 41 || i === 43 ? 'admin-down' : 'no-xcvr';
+                            document.write(`<div class="port ${state}" onclick="inspect(this, 'Et${i}', '${state === 'admin-down' ? 'Admin Down' : 'Empty'}', '--', '--', 'N/A', 'Lab Expansion Block', '--', '--', '--', '--', '--', '00:1c:73:a1:b2:${i.toString(16)}', '--')">${i}</div>`);
+                        }
+                        for (let i = 34; i <= 48; i += 2) {
+                            let state = i === 42 || i === 44 ? 'admin-down' : 'no-xcvr';
+                            document.write(`<div class="port ${state}" onclick="inspect(this, 'Et${i}', '${state === 'admin-down' ? 'Admin Down' : 'Empty'}', '--', '--', 'N/A', 'Lab Expansion Block', '--', '--', '--', '--', '--', '00:1c:73:a1:b2:${i.toString(16)}', '--')">${i}</div>`);
+                        }
+                    </script>
+                </div>
+
+                <div class="w-8"></div>
+
+                <!-- QSFP Block: 49-64 -->
+                <div class="flex gap-2 items-center bg-[#1e2030] p-1.5 rounded-md border border-[#363a4f]">
+                    <div class="port qsfp up"
+                        onclick="inspect(this, 'Et49/1', 'Up', 'core-agg-02', 'Et49/1', '40gig', 'Inter-Switch Link', '40GBASE-SR4', 'Arista', 'QSFP-40G-SR4', 'QS110022', '-1.2 dBm', '00:1c:73:a1:b2:ff', '00:1c:73:ff:ee:dd')">
+                        49</div>
+                    <div class="port qsfp no-xcvr"
+                        onclick="inspect(this, 'Et53/1', 'Empty', '--', '--', 'N/A', 'Uplink 2', '--', '--', '--', '--', '--', '00:1c:73:a1:b3:01', '--')">
+                        53</div>
+                    <div class="port qsfp no-xcvr"
+                        onclick="inspect(this, 'Et57/1', 'Empty', '--', '--', 'N/A', 'Uplink 3', '--', '--', '--', '--', '--', '00:1c:73:a1:b3:02', '--')">
+                        57</div>
+                    <div class="port qsfp up"
+                        onclick="inspect(this, 'Et61/1', 'Up', 'isp-router-01', 'eth0', '10gig', 'WAN Uplink', '10GBASE-LR', 'FS.com', 'SFP-10G-LR', 'FS-WAN-001', '-4.8 dBm', '00:1c:73:a1:b3:03', '00:50:56:00:11:22')">
+                        61</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Inspector Panel -->
+        <div id="inspector" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8 max-w-7xl mx-auto">
+
+            <!-- Column 1: Physical & Transceiver -->
+            <div class="bg-[#1e2030] rounded-xl border border-[#494d64] p-5 shadow-lg space-y-4">
+                <div class="flex justify-between items-center border-b border-[#363a4f] pb-3">
+                    <h3 class="text-xs font-black text-lavender uppercase tracking-widest">Interface Details</h3>
+                    <span id="disp-status"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#494d64]">Select Port</span>
+                </div>
+
+                <div class="flex items-baseline gap-2">
+                    <span id="disp-port" class="text-5xl font-black text-white">--</span>
+                    <span id="disp-speed" class="text-sm font-mono text-sapphire">--</span>
+                </div>
+
+                <div class="bg-[#24273a] p-3 rounded-lg border border-[#363a4f] mb-2">
+                    <label class="text-[10px] font-bold text-subtext0 uppercase block mb-1">Local Interface MAC
+                        (BIA)</label>
+                    <div id="disp-local-mac" class="text-xs font-mono text-blue-300">--</div>
+                </div>
+
+                <div class="bg-[#24273a] p-4 rounded-lg border border-[#363a4f] space-y-2">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] font-bold text-subtext0 uppercase">Transceiver</span>
+                        <span id="disp-media" class="text-[10px] font-mono text-peach">--</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-y-1 text-xs border-t border-[#363a4f] pt-2">
+                        <span class="text-subtext0">Vendor</span> <span id="disp-vendor"
+                            class="text-white text-right font-mono">--</span>
+                        <span class="text-subtext0">Model</span> <span id="disp-model"
+                            class="text-white text-right font-mono">--</span>
+                        <span class="text-subtext0">Serial</span> <span id="disp-serial"
+                            class="text-white text-right font-mono text-[10px]">--</span>
+                        <span class="text-subtext0">RX Power</span> <span id="disp-rx"
+                            class="text-green text-right font-mono">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 2: LLDP Neighbor -->
+            <div class="bg-[#1e2030] rounded-xl border border-[#494d64] p-5 shadow-lg space-y-4">
+                <h3 class="text-xs font-black text-blue-300 uppercase tracking-widest border-b border-[#363a4f] pb-3">
+                    LLDP Discovery (Live)</h3>
+
+                <div class="space-y-4">
+                    <div class="bg-[#24273a] p-4 rounded-lg border-l-4 border-blue-400">
+                        <label class="text-[10px] font-bold text-blue-400 uppercase block mb-1">Neighbor
+                            Hostname</label>
+                        <div id="disp-lldp-name" class="text-xl font-mono text-white break-all">Waiting for input...
+                        </div>
+                    </div>
+
+                    <div class="bg-[#24273a] p-4 rounded-lg">
+                        <label class="text-[10px] font-bold text-blue-400 uppercase block mb-1">Neighbor Port ID</label>
+                        <div id="disp-lldp-port" class="text-sm font-mono text-white">--</div>
+                    </div>
+
+                    <div class="bg-[#24273a] p-4 rounded-lg">
+                        <label class="text-[10px] font-bold text-blue-400 uppercase block mb-1">Neighbor Chassis ID
+                            (MAC)</label>
+                        <div id="disp-neighbor-mac" class="text-sm font-mono text-white">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 3: Manual Labels -->
+            <div class="bg-[#1e2030] rounded-xl border border-[#494d64] p-5 shadow-lg space-y-4">
+                <h3 class="text-xs font-black text-yellow-200 uppercase tracking-widest border-b border-[#363a4f] pb-3">
+                    Inventory Manager</h3>
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="text-[10px] font-bold text-subtext0 uppercase block mb-2">Expected Device /
+                            Purpose</label>
+                        <input type="text" id="input-label"
+                            class="w-full bg-[#24273a] border border-[#494d64] rounded-lg p-3 text-white font-mono text-sm focus:outline-none focus:border-lavender transition-all"
+                            placeholder="e.g. Proxmox Cluster Node 1">
+                    </div>
+
+                    <button onclick="saveData()"
+                        class="w-full bg-lavender text-[#1e2030] font-black py-4 rounded-lg hover:brightness-110 active:scale-[0.98] transition-all uppercase text-xs tracking-widest">
+                        Save to Brohome Database
+                    </button>
+
+                    <p class="text-[10px] text-center text-subtext0 italic">Changes will be pushed to the Go backend via
+                        eAPI</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer
+            class="mt-12 max-w-7xl mx-auto flex justify-between items-center text-[#5b6078] text-[10px] font-mono border-t border-[#363a4f] pt-6">
+            <div>
+                <span class="text-lavender">OPERATOR:</span> sam
+                <span class="mx-3 opacity-30">|</span>
+                <span class="text-lavender">ACCESS:</span> administrator-sudo
+            </div>
+            <div class="flex gap-6">
+                <span>SYSTEM TEMP: <span class="text-peach">42°C</span></span>
+                <span>FAN SPEED: <span class="text-green">9400 RPM</span></span>
+                <span>UPTIME: 142d 12h</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function inspect(element, port, status, lldpName, lldpPort, speed, label, media, vendor, model, serial, rx, localMac, neighborMac) {
+            // UI: Handle active state classes
+            document.querySelectorAll('.port').forEach(p => p.classList.remove('active'));
+            element.classList.add('active');
+
+            // 1. Physical Column
+            document.getElementById('disp-port').innerText = port;
+            document.getElementById('disp-speed').innerText = speed;
+            document.getElementById('disp-status').innerText = status;
+            document.getElementById('disp-local-mac').innerText = localMac;
+
+            const statusEl = document.getElementById('disp-status');
+            statusEl.className = `px-2 py-0.5 rounded text-[10px] font-bold uppercase `;
+            if (status === 'Up') statusEl.classList.add('bg-green-900/40', 'text-green-300');
+            else if (status === 'Admin Down') statusEl.classList.add('bg-blue-900/40', 'text-blue-300');
+            else statusEl.classList.add('bg-[#363a4f]', 'text-subtext0');
+
+            // 2. Transceiver Details
+            document.getElementById('disp-media').innerText = media;
+            document.getElementById('disp-vendor').innerText = vendor;
+            document.getElementById('disp-model').innerText = model;
+            document.getElementById('disp-serial').innerText = serial;
+            document.getElementById('disp-rx').innerText = rx;
+
+            // 3. LLDP Column
+            document.getElementById('disp-lldp-name').innerText = lldpName;
+            document.getElementById('disp-lldp-port').innerText = lldpPort;
+            document.getElementById('disp-neighbor-mac').innerText = neighborMac;
+
+            // 4. Manual Label Column
+            document.getElementById('input-label').value = label === 'Unassigned' ? '' : label;
+        }
+
+        function saveData() {
+            const port = document.getElementById('disp-port').innerText;
+            const label = document.getElementById('input-label').value;
+
+            if (port === '--') {
+                showFeedback('Please select a port first', 'red');
+                return;
+            }
+
+            // This is where you will point your Go Fetch request later
+            console.log(`Sending update to Brohome Go Backend: Port ${port} -> Label: ${label}`);
+            showFeedback(`Saved ${port} label: ${label}`, 'green');
+        }
+
+        function showFeedback(msg, color) {
+            const btn = document.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = msg;
+            btn.style.backgroundColor = `var(--${color})`;
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.backgroundColor = `var(--lavender)`;
+            }, 2000);
+        }
+
+        // Initialize with first port for better UX
+        window.onload = () => {
+            const firstPort = document.querySelector('.port');
+            if (firstPort) firstPort.click();
+        };
+    </script>
+</body>
+
+</html>
