@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loom | Brohome.net Network Fabric</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Catppuccin Macchiato Palette */
+            --base: #24273a;
+            --surface0: #363a4f;
+            --surface1: #494d64;
+            --text: #cad3f5;
+            --subtext0: #a5adcb;
+            --lavender: #b7bdf8;
+            --blue: #8aadf4;
+            --sapphire: #7dc4e4;
+            --green: #a6da95;
+            --yellow: #eed49f;
+            --red: #ed8796;
+            --peach: #f5a97f;
+        }
+
+        body {
+            background-color: var(--base);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .port {
+            width: 30px;
+            height: 30px;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            font-weight: bold;
+            color: #1e2030;
+            border: 1px solid #1e2030;
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .port:hover {
+            transform: scale(1.35);
+            z-index: 50;
+            outline: 2px solid var(--lavender);
+            box-shadow: 0 0 20px rgba(183, 189, 248, 0.4);
+        }
+
+        .port.active {
+            outline: 2px solid var(--text);
+            transform: scale(1.2);
+            box-shadow: 0 0 25px rgba(202, 211, 245, 0.3);
+            z-index: 40;
+        }
+
+        .up {
+            background-color: var(--green);
+        }
+
+        .oper-down {
+            background-color: var(--yellow);
+        }
+
+        .admin-down {
+            background-color: var(--blue);
+        }
+
+        .no-xcvr {
+            background-color: var(--surface1);
+            color: var(--text);
+            opacity: 0.6;
+        }
+
+        .error {
+            background-color: var(--red);
+        }
+
+        .port-group {
+            display: grid;
+            grid-template-columns: repeat(8, min-content);
+            grid-template-rows: repeat(2, min-content);
+            gap: 3px;
+        }
+
+        .qsfp {
+            width: 34px;
+            height: 64px;
+        }
+
+        .chassis-flex {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+        }
+
+        ::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--base);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--surface1);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="max-w-[1500px] mx-auto">
+        <header class="mb-10 flex justify-between items-end border-b border-[#494d64] pb-6">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="w-8 h-8 bg-lavender rounded flex items-center justify-center">
+                        <svg class="w-5 h-5 text-[#24273a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                d="M4 6h16M4 12h16m-7 6h7"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-4xl font-black text-white tracking-tighter uppercase leading-none">Loom</h1>
+                </div>
+                <p class="text-xs text-blue-300 font-mono tracking-[0.2em] uppercase">Fabric Inspector // {{
+                    .Device.hostname }}</p>
+            </div>
+
+            <div class="flex gap-6 text-[10px] font-black uppercase tracking-widest text-subtext0">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-sm up"></div> Up
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-sm oper-down"></div> Down
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-sm admin-down"></div> Disabled
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-sm no-xcvr"></div> Empty
+                </div>
+            </div>
+        </header>
+
+        <div class="bg-[#181926] p-8 py-12 rounded-2xl border border-[#363a4f] shadow-2xl overflow-x-auto">
+            <div class="chassis-flex min-w-max">
+
+                {{ $ports := .Ports }}
+                {{ range $i, $group := .Layout.Groups }}
+                <div class="port-group">
+                    {{ range $n := seq $group.StartPort $group.EndPort }}
+                    {{ $pname := printf "Ethernet%d" $n }}
+                    {{ $pdata := index $ports $pname }}
+                    <div class="port {{ if eq $pdata.status " connected" }}up{{ else if eq $pdata.status "notconnect"
+                        }}no-xcvr{{ else }}admin-down{{ end }}"
+                        onclick="inspect(this, '{{ $pname }}', '{{ $pdata.status }}', '{{ $pdata.speed }}')">
+                        {{ $n }}
+                    </div>
+                    {{ end }}
+                </div>
+                {{ if lt $i (sub (len $.Layout.Groups) 1) }}
+                <div class="h-16 w-1 bg-surface1 opacity-30 rounded-full"></div>
+                {{ end }}
+                {{ end }}
+
+                {{ if eq .Layout.UplinkType "QSFP" }}
+                <div class="w-12"></div>
+                <div class="flex gap-3 items-center bg-[#1e2030] p-2 rounded-xl border border-[#363a4f]">
+                    {{ range $n := seq 49 64 }}
+                    {{ if eq (mod (sub $n 49) 4) 0 }}
+                    {{ $pname := printf "Ethernet%d/1" $n }}
+                    {{ $pdata := index $ports $pname }}
+                    <div class="port qsfp {{ if eq $pdata.status " connected" }}up{{ else if eq
+                        $pdata.status "notconnect" }}no-xcvr{{ else }}admin-down{{ end }}"
+                        onclick="inspect(this, '{{ $pname }}', '{{ $pdata.status }}', '{{ $pdata.speed }}')">
+                        {{ $n }}
+                    </div>
+                    {{ end }}
+                    {{ end }}
+                </div>
+                {{ end }}
+
+            </div>
+        </div>
+
+        <div id="loom-inspector" class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-12">
+            <div class="bg-[#1e2030] rounded-2xl border border-[#494d64] p-6 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-[10px] font-black text-lavender uppercase tracking-widest">Interface</h3>
+                        <span id="disp-status"
+                            class="px-2 py-1 rounded text-[10px] font-bold uppercase bg-[#363a4f]">Select Port</span>
+                    </div>
+                    <div class="flex items-baseline gap-3 mb-6">
+                        <span id="disp-port" class="text-6xl font-black text-white">--</span>
+                        <span id="disp-speed" class="text-sm font-mono text-sapphire tracking-tighter">--</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-[#24273a] p-4 rounded-xl border border-[#363a4f]">
+                        <span class="text-[9px] font-bold text-subtext0 uppercase block mb-2">Transceiver
+                            Diagnostics</span>
+                        <div class="grid grid-cols-2 gap-y-2 text-xs font-mono">
+                            <span class="text-subtext0">Vendor:</span> <span id="disp-vendor"
+                                class="text-right text-white">--</span>
+                            <span class="text-subtext0">Model:</span> <span id="disp-model"
+                                class="text-right text-white">--</span>
+                            <span class="text-subtext0">Serial:</span> <span id="disp-serial"
+                                class="text-right text-white text-[10px]">--</span>
+                            <span class="text-subtext0">Power:</span> <span id="disp-rx"
+                                class="text-right text-green">--</span>
+                        </div>
+                    </div>
+                    <div class="bg-[#24273a] p-3 rounded-lg text-center">
+                        <span class="text-[9px] font-bold text-subtext0 uppercase block mb-1">Local MAC (BIA)</span>
+                        <span id="disp-local-mac" class="text-xs font-mono text-blue-300">{{ .Device.mac }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#1e2030] rounded-2xl border border-[#494d64] p-6 shadow-xl space-y-6">
+                <h3 class="text-[10px] font-black text-blue-300 uppercase tracking-widest">LLDP Discovery</h3>
+                <div class="bg-[#24273a] p-5 rounded-2xl border-l-4 border-blue-400">
+                    <label class="text-[9px] font-bold text-blue-400 uppercase block mb-2">Neighbor Identity</label>
+                    <div id="disp-lldp-name" class="text-xl font-mono text-white leading-tight">Waiting...</div>
+                </div>
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="bg-[#24273a] p-4 rounded-xl">
+                        <label class="text-[9px] font-bold text-subtext0 uppercase block mb-1">Remote Port</label>
+                        <div id="disp-lldp-port" class="text-sm font-mono text-white">--</div>
+                    </div>
+                    <div class="bg-[#24273a] p-4 rounded-xl">
+                        <label class="text-[9px] font-bold text-subtext0 uppercase block mb-1">Remote Chassis
+                            MAC</label>
+                        <div id="disp-neighbor-mac" class="text-sm font-mono text-white">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#1e2030] rounded-2xl border border-[#494d64] p-6 shadow-xl flex flex-col">
+                <h3 class="text-[10px] font-black text-yellow-200 uppercase tracking-widest mb-6">Inventory Override
+                </h3>
+                <div class="flex-grow space-y-6">
+                    <div>
+                        <label class="text-[9px] font-bold text-subtext0 uppercase block mb-2">Defined Purpose</label>
+                        <input type="text" id="input-label"
+                            class="w-full bg-[#24273a] border border-[#494d64] rounded-xl p-4 text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-lavender transition-all"
+                            placeholder="Assign to server...">
+                    </div>
+                    <div
+                        class="text-[10px] text-subtext0 bg-surface0/30 p-4 rounded-xl border border-dashed border-surface1 italic">
+                        The Loom database compares live discovery data with your expected labels.
+                    </div>
+                </div>
+                <button onclick="saveData()"
+                    class="mt-6 w-full bg-lavender text-[#1e2030] font-black py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all uppercase text-xs tracking-[0.2em]">
+                    Commit to Fabric
+                </button>
+            </div>
+        </div>
+
+        <footer
+            class="mt-16 flex justify-between items-center text-[#5b6078] text-[10px] font-mono border-t border-[#363a4f] pt-8 mb-8">
+            <div class="flex gap-4">
+                <span><span class="text-lavender">USER:</span> sam</span>
+                <span class="opacity-20">/</span>
+                <span><span class="text-lavender">MODEL:</span> {{ .Device.model }}</span>
+            </div>
+            <div class="flex gap-8">
+                <span>TEMP: <span class="text-peach">42°C</span></span>
+                <span>UPTIME: 142d 12h</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function inspect(element, port, status, speed) {
+            document.querySelectorAll('.port').forEach(p => p.classList.remove('active'));
+            element.classList.add('active');
+
+            document.getElementById('disp-port').innerText = port;
+            document.getElementById('disp-speed').innerText = speed;
+
+            const statusEl = document.getElementById('disp-status');
+            statusEl.innerText = status;
+            statusEl.className = `px-2 py-1 rounded text-[10px] font-bold uppercase `;
+
+            // Note: Arista statuses are usually 'connected', 'notconnect', 'disabled'
+            if (status === 'connected') statusEl.classList.add('bg-green-900/30', 'text-green-300');
+            else if (status === 'notconnect') statusEl.classList.add('bg-surface1', 'text-subtext0');
+            else statusEl.classList.add('bg-blue-900/30', 'text-blue-300');
+        }
+
+        function saveData() {
+            // Logic for saving labels would go here
+        }
+
+        window.onload = () => {
+            const upPort = document.querySelector('.port.up');
+            if (upPort) upPort.click();
+        };
+    </script>
+</body>
+
+</html>
