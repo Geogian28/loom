@@ -9,10 +9,11 @@ import (
 )
 
 type appConfig struct {
-	port     int
-	username string
-	password string
-	address  string
+	port         int
+	username     string
+	password     string
+	address      string
+	templatesDir string
 }
 
 func parseFlags() appConfig {
@@ -32,6 +33,11 @@ func parseFlags() appConfig {
 	ac.username = os.Getenv("LOOM_USERNAME")
 	ac.password = os.Getenv("LOOM_PASSWORD")
 	ac.address = os.Getenv("LOOM_ADDRESS")
+	ac.templatesDir = os.Getenv("LOOM_TEMPLATES_DIR")
+
+	if ac.templatesDir == "" {
+		ac.templatesDir = "templates"
+	}
 
 	if ac.username == "" {
 		argumentErrors = append(argumentErrors, "missing username")

@@ -7,7 +7,6 @@ import (
 
 	arista "github.com/aristanetworks/goeapi"
 	"github.com/aristanetworks/goeapi/module"
-	"github.com/mitchellh/mapstructure"
 )
 
 type ShowHostnameResp struct {
@@ -99,7 +98,7 @@ func (a *aristaScanner) getHostname() (string, error) {
 	}
 	fmt.Println("show hostname: ", sh.HostName)
 	fmt.Println("show FQDN: ", sh.FQDN)
-	return "sv.ModelName", nil
+	return sh.HostName, nil
 }
 
 // func (a *aristaScanner) getHostname() (string, error) {
@@ -195,99 +194,151 @@ func (a *aristaScanner) ShowLLDPNeighbors() error {
 	return nil
 }
 
+// func (a *aristaScanner) getPorts() ([]portInfo, error) {
+// 	err := a.establishAristaConnection()
+// 	if err != nil {
+// 		fmt.Println("Unable to establish connection: ", err)
+// 		return nil, err
+// 	}
+
+// 	// resp := module.SwitchPort(a.node).GetAll()
+// 	// for _, switchport := range resp {
+// 	// 	fmt.Println("switchport.Name: ", switchport.Name())
+// 	// 	fmt.Println("switchport.Mode: ", switchport.Mode())
+// 	// }
+// 	var sv module.ShowInterface
+// 	handle, _ := a.node.GetHandle("json")
+// 	handle.AddCommand(&sv)
+
+// 	cmds := []string{"show interfaces"}
+// 	res, err := a.node.RunCommands(cmds, "json")
+// 	// fmt.Println("res: ", res)
+// 	fmt.Println("")
+
+// 	interfacesRaw, ok := res.Result[0]["interfaces"].(map[string]interface{})
+// 	if !ok {
+// 		return nil, fmt.Errorf("could not find interfaces key in response")
+// 	}
+// 	var allPortInfos []portInfo
+
+// 	for name := range interfacesRaw {
+// 		var switchportEt1 module.SwitchInterface
+// 		if ethernet1, ok := res.Result[0]["interfaces"].(map[string]interface{})[name].(map[string]interface{}); ok {
+// 			mapstructure.Decode(ethernet1, &switchportEt1)
+// 		}
+// 		p := portInfo{
+// 			number: strings.TrimPrefix(name, "Ethernet"),
+// 			name:   name,
+// 			speed:  fmt.Sprintf("%v", switchportEt1.Bandwidth),
+// 		}
+// 		if p.speed, ok = speedMap[switchportEt1.Bandwidth]; !ok {
+// 			p.speed = fmt.Sprintf("%v", switchportEt1.Bandwidth)
+// 		}
+// 		allPortInfos = append(allPortInfos, p)
+// 	}
+
+// 	// for _, port := range allPortInfos {
+// 	// 	fmt.Println("port.name: ", port.name)
+// 	// 	fmt.Println("port.number: ", port.number)
+// 	// 	fmt.Println("port.speed: ", port.speed)
+// 	// 	fmt.Println("")
+// 	// }
+// 	fmt.Println("getPorts no error")
+// 	return allPortInfos, nil
+
+// 	// var allPortInfos []portInfo
+// 	// for name, data := range interfacesRaw {
+// 	// 	var config module.InterfaceConfig
+// 	// 	// Decode the specific port data into the module struct
+// 	// 	err := mapstructure.Decode(data, &config)
+// 	// 	if err != nil {
+// 	// 		fmt.Println("Error decoding port data:", err)
+// 	// 		continue // Skip ports that fail to decode
+// 	// 	}
+// 	// 	fmt.Println("config: ", config)
+// 	// 	// 4. Map to your custom internal struct
+// 	// 	// Note: Verify if module.InterfaceConfig allows map-style access or struct-style
+// 	// 	p := portInfo{
+// 	// 		name:   name,
+// 	// 		number: strings.TrimPrefix(name, "Ethernet"),
+// 	// 		// Status: config.Status,                                                 // Usually "connected", "notconnect", or "disabled"
+// 	// 		speed: fmt.Sprintf("%v", data.(map[string]interface{})["bandwidth"]), // eAPI often provides bandwidth in bits
+// 	// 		// Add other fields from your previous 'inspect' requirements
+// 	// 	}
+// 	// 	allPortInfos = append(allPortInfos, p)
+// 	// }
+
+// 	// var switchportEt1 module.InterfaceConfig
+// 	// if ethernet1, ok := res.Result[0]["interfaces"].(map[string]interface{})["Ethernet40"].(map[string]interface{}); ok {
+// 	// 	mapstructure.Decode(ethernet1, &switchportEt1)
+// 	// }
+
+//		// fmt.Println(switchportEt1)
+//		// portInfo := portInfo{
+//		// 	name:   switchportEt1["Name"],
+//		// 	number: strings.TrimPrefix(switchportEt1["Name"], "Ethernet"),
+//		// }
+//		// fmt.Println(portInfo.name)
+//		// fmt.Println(portInfo.number)
+//		// for _, port := range allPortInfos {
+//		// 	fmt.Println(port.name)
+//		// 	fmt.Println(port.number)
+//		// 	fmt.Println(port.speed)
+//		// 	fmt.Println("")
+//		// }
+//		// return nil, nil
+//	}
 func (a *aristaScanner) getPorts() ([]portInfo, error) {
 	err := a.establishAristaConnection()
 	if err != nil {
-		fmt.Println("Unable to establish connection: ", err)
 		return nil, err
 	}
 
-	// resp := module.SwitchPort(a.node).GetAll()
-	// for _, switchport := range resp {
-	// 	fmt.Println("switchport.Name: ", switchport.Name())
-	// 	fmt.Println("switchport.Mode: ", switchport.Mode())
-	// }
-	var sv module.ShowInterface
-	handle, _ := a.node.GetHandle("json")
-	handle.AddCommand(&sv)
-
-	cmds := []string{"show interfaces"}
-	res, err := a.node.RunCommands(cmds, "json")
-	// fmt.Println("res: ", res)
-	fmt.Println("")
-
-	interfacesRaw, ok := res.Result[0]["interfaces"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("could not find interfaces key in response")
+	// Use RunCommands to get the raw JSON map which is more detailed
+	res, err := a.node.RunCommands([]string{"show interfaces status"}, "json")
+	if err != nil {
+		return nil, err
 	}
-	var allPortInfos []portInfo
 
-	for name := range interfacesRaw {
-		var switchportEt1 module.SwitchInterface
-		if ethernet1, ok := res.Result[0]["interfaces"].(map[string]interface{})[name].(map[string]interface{}); ok {
-			mapstructure.Decode(ethernet1, &switchportEt1)
+	interfacesRaw, ok := res.Result[0]["interfaceStatuses"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("loom: interfaceStatuses missing")
+	}
+
+	var allPortInfos []portInfo
+	for name, data := range interfacesRaw {
+		if !strings.HasPrefix(name, "Ethernet") {
+			continue
 		}
+
+		raw := data.(map[string]interface{})
+
+		// Map eAPI bandwidth to our human labels
+		bw := 0
+		if val, ok := raw["bandwidth"].(float64); ok {
+			bw = int(val)
+		}
+
 		p := portInfo{
-			number: strings.TrimPrefix(name, "Ethernet"),
 			name:   name,
-			speed:  fmt.Sprintf("%v", switchportEt1.Bandwidth),
-		}
-		if p.speed, ok = speedMap[switchportEt1.Bandwidth]; !ok {
-			p.speed = fmt.Sprintf("%v", switchportEt1.Bandwidth)
+			number: strings.TrimPrefix(name, "Ethernet"),
+			status: fmt.Sprintf("%v", raw["linkStatus"]), // Arista returns 'connected', 'notconnect', etc.
+			speed:  formatBw(bw),
 		}
 		allPortInfos = append(allPortInfos, p)
 	}
 
-	// for _, port := range allPortInfos {
-	// 	fmt.Println("port.name: ", port.name)
-	// 	fmt.Println("port.number: ", port.number)
-	// 	fmt.Println("port.speed: ", port.speed)
-	// 	fmt.Println("")
-	// }
-	fmt.Println("getPorts no error")
 	return allPortInfos, nil
+}
 
-	// var allPortInfos []portInfo
-	// for name, data := range interfacesRaw {
-	// 	var config module.InterfaceConfig
-	// 	// Decode the specific port data into the module struct
-	// 	err := mapstructure.Decode(data, &config)
-	// 	if err != nil {
-	// 		fmt.Println("Error decoding port data:", err)
-	// 		continue // Skip ports that fail to decode
-	// 	}
-	// 	fmt.Println("config: ", config)
-	// 	// 4. Map to your custom internal struct
-	// 	// Note: Verify if module.InterfaceConfig allows map-style access or struct-style
-	// 	p := portInfo{
-	// 		name:   name,
-	// 		number: strings.TrimPrefix(name, "Ethernet"),
-	// 		// Status: config.Status,                                                 // Usually "connected", "notconnect", or "disabled"
-	// 		speed: fmt.Sprintf("%v", data.(map[string]interface{})["bandwidth"]), // eAPI often provides bandwidth in bits
-	// 		// Add other fields from your previous 'inspect' requirements
-	// 	}
-	// 	allPortInfos = append(allPortInfos, p)
-	// }
-
-	// var switchportEt1 module.InterfaceConfig
-	// if ethernet1, ok := res.Result[0]["interfaces"].(map[string]interface{})["Ethernet40"].(map[string]interface{}); ok {
-	// 	mapstructure.Decode(ethernet1, &switchportEt1)
-	// }
-
-	// fmt.Println(switchportEt1)
-	// portInfo := portInfo{
-	// 	name:   switchportEt1["Name"],
-	// 	number: strings.TrimPrefix(switchportEt1["Name"], "Ethernet"),
-	// }
-	// fmt.Println(portInfo.name)
-	// fmt.Println(portInfo.number)
-	// for _, port := range allPortInfos {
-	// 	fmt.Println(port.name)
-	// 	fmt.Println(port.number)
-	// 	fmt.Println(port.speed)
-	// 	fmt.Println("")
-	// }
-	// return nil, nil
+func formatBw(bw int) string {
+	if label, ok := speedMap[bw]; ok {
+		return label
+	}
+	if bw >= 1000000000 {
+		return fmt.Sprintf("%dgig", bw/1000000000)
+	}
+	return fmt.Sprintf("%dmeg", bw/1000000)
 }
 func (a *aristaScanner) getSystemStats() error {
 	if a.conn == nil {

@@ -16,14 +16,14 @@ type deviceInfo struct {
 }
 
 type portInfo struct {
-	number   string
-	name     string
-	occupied bool
-	vendor   string
-	model    string
-	serial   string
-	media    string
-	speed    string
+	number string
+	name   string
+	status string
+	vendor string
+	model  string
+	serial string
+	media  string
+	speed  string
 }
 
 type lldpNeighbor struct {
@@ -124,6 +124,7 @@ func getDeviceInfo(address string, port int, username string, password string) (
 		hostname: hostname,
 		model:    model,
 		port:     ports,
+		mac:      "de:ad:be:ef:00:00",
 	}
 	fmt.Println(di.hostname)
 	return di, nil
